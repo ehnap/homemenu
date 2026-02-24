@@ -1,0 +1,32 @@
+# Backend
+homemenu
+data/
+*.db
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+
+# Backend embedded static (built artifacts)
+backend/static/*.html
+backend/static/assets/
+backend/static/vite.svg
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Go
+/home/ehnap/go/
+
+# Env
+.env
+
+# Claude Code local settings
+.claude/
