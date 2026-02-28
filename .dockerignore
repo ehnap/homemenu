@@ -1,0 +1,14 @@
+.git/
+data/
+frontend/node_modules/
+frontend/dist/
+backend/static/assets/
+backend/static/*.html
+backend/static/vite.svg
+homemenu
+*.db
+.claude/
+.idea/
+.vscode/
+.env
+.DS_Store

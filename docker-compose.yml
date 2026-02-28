@@ -1,10 +1,27 @@
-version: "3"
 services:
   homemenu:
     build: .
+    image: homemenu:${VERSION:-latest}
+    container_name: homemenu
     ports:
       - "8080:8080"
     volumes:
       - ./data:/app/data
-      - ./config.yaml:/app/config.yaml
+      # Optional: mount config.yaml (env vars work without it)
+      # - ./config.yaml:/app/config.yaml
+    environment:
+      - HOMEMENU_JWT_SECRET=change-me-in-production
+      # - HOMEMENU_PORT=8080
+      # - HOMEMENU_DB_PATH=./data/homemenu.db
+      # - HOMEMENU_UPLOAD_DIR=./data/uploads
+      # - HOMEMENU_SHARE_BASE_URL=http://localhost:8080
+      # - HOMEMENU_LLM_BASE_URL=
+      # - HOMEMENU_LLM_API_KEY=
+      # - HOMEMENU_LLM_MODEL=
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     restart: unless-stopped

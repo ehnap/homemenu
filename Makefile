@@ -1,4 +1,6 @@
-.PHONY: dev-backend dev-frontend dev build clean
+VERSION ?= latest
+
+.PHONY: dev-backend dev-frontend dev build clean docker-build docker-up docker-down
 
 # Development
 dev-backend:
@@ -30,3 +32,13 @@ clean:
 	rm -f homemenu
 	rm -rf frontend/dist
 	rm -rf backend/static/*
+
+# Docker
+docker-build:
+	VERSION=$(VERSION) docker compose build
+
+docker-up:
+	VERSION=$(VERSION) docker compose up -d
+
+docker-down:
+	VERSION=$(VERSION) docker compose down

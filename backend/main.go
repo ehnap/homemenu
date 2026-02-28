@@ -92,6 +92,11 @@ func main() {
 	// API routes
 	api := r.Group("/api")
 	{
+		// Health check (no auth)
+		api.GET("/health", func(c *gin.Context) {
+			c.JSON(http.StatusOK, gin.H{"status": "ok"})
+		})
+
 		auth := api.Group("/auth")
 		{
 			auth.POST("/register", authHandler.Register)

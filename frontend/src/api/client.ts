@@ -22,7 +22,10 @@ client.interceptors.response.use(
     return data.data
   },
   async (error) => {
-    if (error.response?.status === 401) {
+    const url = error.config?.url || ''
+    const isAuthRequest = url.startsWith('/auth/')
+
+    if (error.response?.status === 401 && !isAuthRequest) {
       const refreshToken = localStorage.getItem('refresh_token')
       if (refreshToken && !error.config._retry) {
         error.config._retry = true
@@ -46,7 +49,8 @@ client.interceptors.response.use(
         window.location.href = '/login'
       }
     }
-    return Promise.reject(error)
+    const msg = error.response?.data?.message || error.message || 'Request failed'
+    return Promise.reject(new Error(msg))
   }
 )
 
