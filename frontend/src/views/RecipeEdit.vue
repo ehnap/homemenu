@@ -164,7 +164,6 @@ async function submit() {
       <h1 class="text-2xl font-bold text-stone-800">{{ isEdit ? '编辑菜谱' : '添加菜谱' }}</h1>
       <div class="flex items-center gap-3">
         <button
-          v-if="!isEdit"
           @click="showImportModal = true"
           class="px-3 py-1.5 bg-amber-50 text-amber-700 rounded-lg text-sm hover:bg-amber-100 transition-colors border border-amber-200"
         >智能导入</button>
