@@ -151,6 +151,7 @@ func main() {
 	// Serve frontend static files
 	staticSub, err := fs.Sub(staticFS, "static")
 	if err == nil {
+		indexHTML, _ := fs.ReadFile(staticSub, "index.html")
 		r.NoRoute(func(c *gin.Context) {
 			// Try to serve static file
 			f, err := http.FS(staticSub).Open(c.Request.URL.Path)
@@ -159,8 +160,8 @@ func main() {
 				http.FileServer(http.FS(staticSub)).ServeHTTP(c.Writer, c.Request)
 				return
 			}
-			// SPA fallback: serve index.html
-			c.FileFromFS("index.html", http.FS(staticSub))
+			// SPA fallback: serve index.html directly to avoid http.FileServer redirect
+			c.Data(http.StatusOK, "text/html; charset=utf-8", indexHTML)
 		})
 	}
 
