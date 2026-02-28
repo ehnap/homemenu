@@ -15,6 +15,7 @@ type UserRepo interface {
 type RecipeRepo interface {
 	Create(ctx context.Context, recipe *model.Recipe) error
 	GetByID(ctx context.Context, id int64) (*model.Recipe, error)
+	GetByShareToken(ctx context.Context, token string) (*model.Recipe, error)
 	List(ctx context.Context, filters model.RecipeFilters) ([]model.Recipe, error)
 	Update(ctx context.Context, recipe *model.Recipe) error
 	Delete(ctx context.Context, id int64) error

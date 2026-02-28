@@ -60,6 +60,12 @@ const router = createRouter({
       meta: { public: true },
     },
     {
+      path: '/share/recipe/:token',
+      name: 'RecipeShareView',
+      component: () => import('../views/RecipeShareView.vue'),
+      meta: { public: true },
+    },
+    {
       path: '/settings',
       name: 'Settings',
       component: () => import('../views/Settings.vue'),

@@ -163,3 +163,19 @@ func (h *RecipeHandler) SuggestIngredients(c *gin.Context) {
 
 	Success(c, names)
 }
+
+func (h *RecipeHandler) GenerateShareToken(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		Error(c, http.StatusBadRequest, "invalid id")
+		return
+	}
+
+	token, err := h.recipeService.GenerateShareToken(c.Request.Context(), id)
+	if err != nil {
+		Error(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	Success(c, gin.H{"share_token": token})
+}

@@ -2,7 +2,9 @@ package service
 
 import (
 	"context"
+	"fmt"
 
+	"github.com/google/uuid"
 	"github.com/homemenu/backend/model"
 	"github.com/homemenu/backend/repository"
 )
@@ -98,4 +100,37 @@ func (s *RecipeService) Delete(ctx context.Context, id int64) error {
 
 func (s *RecipeService) SuggestIngredients(ctx context.Context, query string, limit int) ([]string, error) {
 	return s.ingredientRepo.SuggestNames(ctx, query, limit)
+}
+
+func (s *RecipeService) GenerateShareToken(ctx context.Context, id int64) (string, error) {
+	recipe, err := s.recipeRepo.GetByID(ctx, id)
+	if err != nil {
+		return "", fmt.Errorf("recipe not found: %w", err)
+	}
+
+	if recipe.ShareToken != "" {
+		return recipe.ShareToken, nil
+	}
+
+	token := uuid.New().String()
+	recipe.ShareToken = token
+	if err := s.recipeRepo.Update(ctx, recipe); err != nil {
+		return "", err
+	}
+	return token, nil
+}
+
+func (s *RecipeService) GetByShareToken(ctx context.Context, token string) (*model.Recipe, error) {
+	recipe, err := s.recipeRepo.GetByShareToken(ctx, token)
+	if err != nil {
+		return nil, err
+	}
+
+	ingredients, err := s.ingredientRepo.ListByRecipeID(ctx, recipe.ID)
+	if err != nil {
+		return nil, err
+	}
+	recipe.Ingredients = ingredients
+
+	return recipe, nil
 }

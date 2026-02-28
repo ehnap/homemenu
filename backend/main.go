@@ -68,7 +68,7 @@ func main() {
 	authHandler := handler.NewAuthHandler(authService)
 	recipeHandler := handler.NewRecipeHandler(recipeService, parseService)
 	mealPlanHandler := handler.NewMealPlanHandler(mealPlanService, shoppingService)
-	shareHandler := handler.NewShareHandler(mealPlanService, shoppingService)
+	shareHandler := handler.NewShareHandler(mealPlanService, shoppingService, recipeService)
 	uploadHandler := handler.NewUploadHandler(cfg.Upload.Dir, cfg.Upload.MaxSizeMB)
 	settingsHandler := handler.NewSettingsHandler(settingsService)
 
@@ -101,6 +101,7 @@ func main() {
 
 		// Share (no auth required)
 		api.GET("/share/:token", shareHandler.GetByToken)
+		api.GET("/share/recipe/:token", shareHandler.GetRecipeByToken)
 
 		// Protected routes
 		protected := api.Group("")
@@ -114,7 +115,8 @@ func main() {
 				recipes.GET("/:id", recipeHandler.GetByID)
 				recipes.PUT("/:id", recipeHandler.Update)
 				recipes.DELETE("/:id", recipeHandler.Delete)
-			}
+			recipes.POST("/:id/share", recipeHandler.GenerateShareToken)
+		}
 
 			protected.GET("/ingredients/suggestions", recipeHandler.SuggestIngredients)
 

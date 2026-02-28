@@ -1,3 +1,4 @@
+import axios from 'axios'
 import client from './client'
 import type { Recipe } from '../types'
 
@@ -38,5 +39,19 @@ export function parseRecipeText(text: string): Promise<Partial<Recipe>> {
 export function suggestIngredients(query: string): Promise<string[]> {
   return client.get<any, string[]>('/ingredients/suggestions', {
     params: { q: query },
+  })
+}
+
+export function generateShareToken(id: number): Promise<{ share_token: string }> {
+  return client.post<any, { share_token: string }>(`/recipes/${id}/share`)
+}
+
+export function getSharedRecipe(token: string): Promise<Recipe> {
+  return axios.get(`/api/share/recipe/${token}`).then(res => {
+    const data = res.data
+    if (data.code !== 0) {
+      throw new Error(data.message || 'Request failed')
+    }
+    return data.data
   })
 }

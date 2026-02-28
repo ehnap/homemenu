@@ -29,6 +29,8 @@ const loading = ref(false)
 const error = ref('')
 const showImportModal = ref(false)
 
+const PRESET_TAGS = ['咸', '辣', '清淡', '甜', '酸', '荤', '素', '汤']
+
 onMounted(async () => {
   if (isEdit.value) {
     await store.fetchRecipe(id.value)
@@ -85,6 +87,15 @@ function addTag() {
 
 function removeTag(index: number) {
   tags.value.splice(index, 1)
+}
+
+function togglePresetTag(tag: string) {
+  const idx = tags.value.indexOf(tag)
+  if (idx >= 0) {
+    tags.value.splice(idx, 1)
+  } else {
+    tags.value.push(tag)
+  }
 }
 
 async function onCoverUpload(file: File) {
@@ -204,14 +215,24 @@ async function submit() {
 
         <div>
           <label class="block text-sm text-stone-600 mb-1">标签</label>
-          <div class="flex flex-wrap gap-2 mb-2">
-            <span v-for="(tag, i) in tags" :key="i" class="px-2 py-1 bg-orange-50 text-orange-600 text-xs rounded-full flex items-center gap-1">
+          <div class="flex flex-wrap gap-1.5 mb-2">
+            <button
+              v-for="preset in PRESET_TAGS"
+              :key="preset"
+              type="button"
+              @click="togglePresetTag(preset)"
+              :class="['px-2.5 py-1 rounded-full text-xs transition-colors',
+                tags.includes(preset) ? 'bg-orange-600 text-white' : 'bg-stone-100 text-stone-600 hover:bg-stone-200']"
+            >{{ preset }}</button>
+          </div>
+          <div class="flex flex-wrap gap-2 mb-2" v-if="tags.filter(t => !PRESET_TAGS.includes(t)).length">
+            <span v-for="(tag, i) in tags" :key="i" v-show="!PRESET_TAGS.includes(tag)" class="px-2 py-1 bg-orange-50 text-orange-600 text-xs rounded-full flex items-center gap-1">
               {{ tag }}
               <button type="button" @click="removeTag(i)" class="hover:text-orange-800">&times;</button>
             </span>
           </div>
           <div class="flex gap-2">
-            <input v-model="tagInput" @keydown.enter.prevent="addTag" placeholder="输入标签后回车" class="flex-1 px-3 py-2 border border-stone-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
+            <input v-model="tagInput" @keydown.enter.prevent="addTag" placeholder="自定义标签，回车添加" class="flex-1 px-3 py-2 border border-stone-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500" />
             <button type="button" @click="addTag" class="px-3 py-2 bg-stone-100 text-stone-700 rounded-lg text-sm hover:bg-stone-200">添加</button>
           </div>
         </div>

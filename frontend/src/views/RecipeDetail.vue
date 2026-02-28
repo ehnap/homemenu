@@ -1,13 +1,18 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useRecipeStore } from '../stores/recipe'
+import { generateShareToken } from '../api/recipe'
 
 const route = useRoute()
 const router = useRouter()
 const store = useRecipeStore()
 
 const id = Number(route.params.id)
+const shareLink = ref('')
+const showShareModal = ref(false)
+const shareLoading = ref(false)
+const copySuccess = ref(false)
 
 onMounted(() => {
   store.fetchRecipe(id)
@@ -17,6 +22,41 @@ async function handleDelete() {
   if (!confirm('确定要删除这个菜谱吗？')) return
   await store.removeRecipe(id)
   router.push('/recipes')
+}
+
+async function handleShare() {
+  shareLoading.value = true
+  try {
+    const { share_token } = await generateShareToken(id)
+    shareLink.value = `${window.location.origin}/share/recipe/${share_token}`
+    showShareModal.value = true
+  } catch (e) {
+    alert('生成分享链接失败')
+  } finally {
+    shareLoading.value = false
+  }
+}
+
+async function copyShareLink() {
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(shareLink.value)
+    } else {
+      // Fallback for non-HTTPS (e.g. LAN IP access)
+      const textarea = document.createElement('textarea')
+      textarea.value = shareLink.value
+      textarea.style.position = 'fixed'
+      textarea.style.opacity = '0'
+      document.body.appendChild(textarea)
+      textarea.select()
+      document.execCommand('copy')
+      document.body.removeChild(textarea)
+    }
+    copySuccess.value = true
+    setTimeout(() => { copySuccess.value = false }, 2000)
+  } catch {
+    alert('复制失败，请手动选中链接复制')
+  }
 }
 </script>
 
@@ -44,6 +84,11 @@ async function handleDelete() {
         </div>
       </div>
       <div class="flex gap-2">
+        <button
+          @click="handleShare"
+          :disabled="shareLoading"
+          class="px-3 py-1.5 bg-orange-50 text-orange-600 rounded-lg text-sm hover:bg-orange-100 disabled:opacity-50"
+        >{{ shareLoading ? '生成中...' : '分享' }}</button>
         <router-link
           :to="`/recipes/${id}/edit`"
           class="px-3 py-1.5 bg-stone-100 text-stone-700 rounded-lg text-sm hover:bg-stone-200"
@@ -96,6 +141,29 @@ async function handleDelete() {
           <h2 class="font-semibold text-stone-800 mb-2">备注</h2>
           <p class="text-sm text-stone-600">{{ store.currentRecipe.notes }}</p>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Share modal -->
+  <div v-if="showShareModal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50" @click.self="showShareModal = false">
+    <div class="bg-white rounded-xl p-6 max-w-md w-full mx-4">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-lg font-semibold text-stone-800">分享菜谱</h3>
+        <button @click="showShareModal = false" class="text-stone-400 hover:text-stone-600 text-xl">&times;</button>
+      </div>
+      <p class="text-sm text-stone-600 mb-3">复制以下链接分享给他人，无需登录即可查看：</p>
+      <div class="flex gap-2">
+        <input
+          :value="shareLink"
+          readonly
+          class="flex-1 px-3 py-2 border border-stone-300 rounded-lg text-sm bg-stone-50"
+          @focus="($event.target as HTMLInputElement).select()"
+        />
+        <button
+          @click="copyShareLink"
+          :class="['px-4 py-2 rounded-lg text-sm', copySuccess ? 'bg-green-500 text-white' : 'bg-orange-500 text-white hover:bg-orange-600']"
+        >{{ copySuccess ? '已复制' : '复制' }}</button>
       </div>
     </div>
   </div>
