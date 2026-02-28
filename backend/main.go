@@ -16,6 +16,7 @@ import (
 	"github.com/homemenu/backend/repository/sqlite"
 	"github.com/homemenu/backend/service"
 	"github.com/homemenu/backend/service/generator"
+	"github.com/homemenu/backend/service/llm"
 )
 
 //go:embed static/*
@@ -44,6 +45,7 @@ func main() {
 	ingredientRepo := sqlite.NewIngredientRepo(database)
 	mealPlanRepo := sqlite.NewMealPlanRepo(database)
 	mealPlanItemRepo := sqlite.NewMealPlanItemRepo(database)
+	settingsRepo := sqlite.NewSettingsRepo(database)
 
 	// Generator
 	var gen generator.MenuGenerator
@@ -58,13 +60,17 @@ func main() {
 	recipeService := service.NewRecipeService(recipeRepo, ingredientRepo)
 	mealPlanService := service.NewMealPlanService(mealPlanRepo, mealPlanItemRepo, recipeRepo, ingredientRepo, gen)
 	shoppingService := service.NewShoppingService(mealPlanItemRepo, recipeRepo, ingredientRepo)
+	settingsService := service.NewSettingsService(settingsRepo)
+	llmClient := llm.NewClient()
+	parseService := service.NewParseService(llmClient, settingsService, cfg.LLM)
 
 	// Handlers
 	authHandler := handler.NewAuthHandler(authService)
-	recipeHandler := handler.NewRecipeHandler(recipeService)
+	recipeHandler := handler.NewRecipeHandler(recipeService, parseService)
 	mealPlanHandler := handler.NewMealPlanHandler(mealPlanService, shoppingService)
 	shareHandler := handler.NewShareHandler(mealPlanService, shoppingService)
 	uploadHandler := handler.NewUploadHandler(cfg.Upload.Dir, cfg.Upload.MaxSizeMB)
+	settingsHandler := handler.NewSettingsHandler(settingsService)
 
 	r := gin.Default()
 
@@ -104,10 +110,13 @@ func main() {
 			{
 				recipes.GET("", recipeHandler.List)
 				recipes.POST("", recipeHandler.Create)
+				recipes.POST("/parse-text", recipeHandler.ParseText)
 				recipes.GET("/:id", recipeHandler.GetByID)
 				recipes.PUT("/:id", recipeHandler.Update)
 				recipes.DELETE("/:id", recipeHandler.Delete)
 			}
+
+			protected.GET("/ingredients/suggestions", recipeHandler.SuggestIngredients)
 
 			mealPlans := protected.Group("/meal-plans")
 			{
@@ -123,6 +132,12 @@ func main() {
 			}
 
 			protected.POST("/upload", uploadHandler.Upload)
+
+			settings := protected.Group("/settings")
+			{
+				settings.GET("/llm", settingsHandler.GetLLMSettings)
+				settings.PUT("/llm", settingsHandler.UpdateLLMSettings)
+			}
 		}
 	}
 

@@ -26,6 +26,7 @@ type IngredientRepo interface {
 	ListByRecipeID(ctx context.Context, recipeID int64) ([]model.Ingredient, error)
 	ListByRecipeIDs(ctx context.Context, recipeIDs []int64) (map[int64][]model.Ingredient, error)
 	DeleteByRecipeID(ctx context.Context, recipeID int64) error
+	SuggestNames(ctx context.Context, query string, limit int) ([]string, error)
 }
 
 type MealPlanRepo interface {
@@ -43,4 +44,11 @@ type MealPlanItemRepo interface {
 	DeleteByPlanID(ctx context.Context, planID int64) error
 	DeleteByID(ctx context.Context, id int64) error
 	Update(ctx context.Context, item *model.MealPlanItem) error
+}
+
+type SettingsRepo interface {
+	Get(ctx context.Context, userID int64, key string) (string, error)
+	Set(ctx context.Context, userID int64, key, value string) error
+	GetMulti(ctx context.Context, userID int64, keys []string) (map[string]string, error)
+	SetMulti(ctx context.Context, userID int64, values map[string]string) error
 }

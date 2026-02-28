@@ -28,3 +28,15 @@ export function uploadImage(file: File): Promise<{ url: string }> {
     headers: { 'Content-Type': 'multipart/form-data' },
   })
 }
+
+export function parseRecipeText(text: string): Promise<Partial<Recipe>> {
+  return client.post<any, Partial<Recipe>>('/recipes/parse-text', { text }, {
+    timeout: 60000,
+  })
+}
+
+export function suggestIngredients(query: string): Promise<string[]> {
+  return client.get<any, string[]>('/ingredients/suggestions', {
+    params: { q: query },
+  })
+}

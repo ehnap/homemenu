@@ -28,6 +28,11 @@ function logout() {
               class="text-sm text-stone-600 hover:text-orange-600 transition-colors"
               active-class="text-orange-600 font-medium"
             >菜单</router-link>
+            <router-link
+              to="/settings"
+              class="text-sm text-stone-600 hover:text-orange-600 transition-colors"
+              active-class="text-orange-600 font-medium"
+            >设置</router-link>
           </div>
           <button
             @click="logout"

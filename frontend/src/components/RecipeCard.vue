@@ -21,7 +21,13 @@ defineProps<{
       <span class="text-3xl">🍽️</span>
     </div>
     <div class="p-3">
-      <h3 class="font-medium text-stone-800 text-sm">{{ recipe.name }}</h3>
+      <h3 class="font-medium text-stone-800 text-sm">
+        {{ recipe.name }}
+        <span
+          v-if="!recipe.ingredients?.length || !recipe.steps?.length"
+          class="ml-1 px-1.5 py-0.5 bg-amber-100 text-amber-600 text-xs rounded font-normal"
+        >待完善</span>
+      </h3>
       <div class="flex gap-1.5 mt-2 flex-wrap">
         <span v-if="recipe.difficulty" class="px-1.5 py-0.5 bg-stone-100 text-stone-500 text-xs rounded">
           {{ recipe.difficulty }}
@@ -33,7 +39,7 @@ defineProps<{
           {{ tag }}
         </span>
       </div>
-      <div v-if="recipe.ingredients.length" class="mt-2 text-xs text-stone-400 truncate">
+      <div v-if="recipe.ingredients?.length" class="mt-2 text-xs text-stone-400 truncate">
         {{ recipe.ingredients.map(i => i.name).join('、') }}
       </div>
     </div>

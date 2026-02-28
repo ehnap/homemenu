@@ -100,6 +100,12 @@ export interface TokenPair {
   refresh_token: string
 }
 
+export interface LLMSettings {
+  base_url: string
+  api_key: string
+  model: string
+}
+
 export const MEAL_TYPE_LABELS: Record<string, string> = {
   breakfast: '早餐',
   lunch: '午餐',

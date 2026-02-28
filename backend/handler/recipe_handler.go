@@ -12,10 +12,11 @@ import (
 
 type RecipeHandler struct {
 	recipeService *service.RecipeService
+	parseService  *service.ParseService
 }
 
-func NewRecipeHandler(recipeService *service.RecipeService) *RecipeHandler {
-	return &RecipeHandler{recipeService: recipeService}
+func NewRecipeHandler(recipeService *service.RecipeService, parseService *service.ParseService) *RecipeHandler {
+	return &RecipeHandler{recipeService: recipeService, parseService: parseService}
 }
 
 func (h *RecipeHandler) List(c *gin.Context) {
@@ -116,4 +117,49 @@ func (h *RecipeHandler) Delete(c *gin.Context) {
 	}
 
 	Success(c, nil)
+}
+
+func (h *RecipeHandler) ParseText(c *gin.Context) {
+	var req struct {
+		Text string `json:"text"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		Error(c, http.StatusBadRequest, "invalid request")
+		return
+	}
+
+	if len(req.Text) == 0 {
+		Error(c, http.StatusBadRequest, "text is required")
+		return
+	}
+
+	if len(req.Text) > 10000 {
+		Error(c, http.StatusBadRequest, "text too long (max 10000 characters)")
+		return
+	}
+
+	userID := GetUserID(c)
+	recipe, err := h.parseService.ParseRecipeText(c.Request.Context(), userID, req.Text)
+	if err != nil {
+		Error(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	Success(c, recipe)
+}
+
+func (h *RecipeHandler) SuggestIngredients(c *gin.Context) {
+	q := c.Query("q")
+	if q == "" {
+		Success(c, []string{})
+		return
+	}
+
+	names, err := h.recipeService.SuggestIngredients(c.Request.Context(), q, 10)
+	if err != nil {
+		Error(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	Success(c, names)
 }

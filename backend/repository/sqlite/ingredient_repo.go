@@ -104,3 +104,29 @@ func (r *IngredientRepo) DeleteByRecipeID(ctx context.Context, recipeID int64) e
 	_, err := r.db.ExecContext(ctx, "DELETE FROM recipe_ingredients WHERE recipe_id = ?", recipeID)
 	return err
 }
+
+func (r *IngredientRepo) SuggestNames(ctx context.Context, query string, limit int) ([]string, error) {
+	if limit <= 0 {
+		limit = 10
+	}
+	rows, err := r.db.QueryContext(ctx,
+		"SELECT DISTINCT name FROM recipe_ingredients WHERE name LIKE ? ORDER BY name LIMIT ?",
+		"%"+query+"%", limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var names []string
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			return nil, err
+		}
+		names = append(names, name)
+	}
+	if names == nil {
+		names = []string{}
+	}
+	return names, nil
+}

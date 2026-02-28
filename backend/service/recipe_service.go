@@ -95,3 +95,7 @@ func (s *RecipeService) Delete(ctx context.Context, id int64) error {
 	}
 	return s.recipeRepo.Delete(ctx, id)
 }
+
+func (s *RecipeService) SuggestIngredients(ctx context.Context, query string, limit int) ([]string, error) {
+	return s.ingredientRepo.SuggestNames(ctx, query, limit)
+}

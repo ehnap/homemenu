@@ -59,6 +59,11 @@ const router = createRouter({
       component: () => import('../views/ShareView.vue'),
       meta: { public: true },
     },
+    {
+      path: '/settings',
+      name: 'Settings',
+      component: () => import('../views/Settings.vue'),
+    },
   ],
 })
 

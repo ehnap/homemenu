@@ -3,9 +3,10 @@ import { onMounted, ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useRecipeStore } from '../stores/recipe'
 import { uploadImage } from '../api/recipe'
-import type { Ingredient, Step } from '../types'
+import type { Ingredient, Step, Recipe } from '../types'
 import IngredientInput from '../components/IngredientInput.vue'
 import ImageUpload from '../components/ImageUpload.vue'
+import SmartImportModal from '../components/SmartImportModal.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -26,6 +27,7 @@ const ingredients = ref<Ingredient[]>([{ name: '', amount: '', unit: '' }])
 const steps = ref<Step[]>([{ order: 1, description: '' }])
 const loading = ref(false)
 const error = ref('')
+const showImportModal = ref(false)
 
 onMounted(async () => {
   if (isEdit.value) {
@@ -45,6 +47,12 @@ onMounted(async () => {
         ? store.currentRecipe.steps.map(s => ({ ...s }))
         : [{ order: 1, description: '' }]
     }
+  }
+
+  // Check for parsed recipe from router state (from RecipeList smart import)
+  const parsed = history.state?.parsedRecipe
+  if (parsed) {
+    fillFromParsed(parsed)
   }
 })
 
@@ -84,6 +92,33 @@ async function onCoverUpload(file: File) {
   coverImage.value = result.url
 }
 
+function fillFromParsed(parsed: Partial<Recipe>) {
+  if (parsed.name) name.value = parsed.name
+  if (parsed.cook_time) cookTime.value = parsed.cook_time
+  if (parsed.difficulty) difficulty.value = parsed.difficulty
+  if (parsed.tags?.length) tags.value = [...parsed.tags]
+  if (parsed.calories) calories.value = parsed.calories
+  if (parsed.notes) notes.value = parsed.notes
+  if (parsed.ingredients?.length) {
+    ingredients.value = parsed.ingredients.map(i => ({
+      name: i.name || '',
+      amount: i.amount || '',
+      unit: i.unit || '',
+    }))
+  }
+  if (parsed.steps?.length) {
+    steps.value = parsed.steps.map((s, i) => ({
+      order: s.order || i + 1,
+      description: s.description || '',
+    }))
+  }
+}
+
+function onParsed(parsed: Partial<Recipe>) {
+  showImportModal.value = false
+  fillFromParsed(parsed)
+}
+
 async function submit() {
   if (!name.value.trim()) {
     error.value = '请输入菜名'
@@ -91,10 +126,6 @@ async function submit() {
   }
 
   const validIngredients = ingredients.value.filter(i => i.name.trim())
-  if (validIngredients.length === 0) {
-    error.value = '请至少添加一个食材'
-    return
-  }
 
   error.value = ''
   loading.value = true
@@ -131,7 +162,14 @@ async function submit() {
   <div class="max-w-3xl mx-auto">
     <div class="flex justify-between items-center mb-6">
       <h1 class="text-2xl font-bold text-stone-800">{{ isEdit ? '编辑菜谱' : '添加菜谱' }}</h1>
-      <button @click="router.back()" class="text-sm text-stone-500 hover:text-stone-700">取消</button>
+      <div class="flex items-center gap-3">
+        <button
+          v-if="!isEdit"
+          @click="showImportModal = true"
+          class="px-3 py-1.5 bg-amber-50 text-amber-700 rounded-lg text-sm hover:bg-amber-100 transition-colors border border-amber-200"
+        >智能导入</button>
+        <button @click="router.back()" class="text-sm text-stone-500 hover:text-stone-700">取消</button>
+      </div>
     </div>
 
     <div v-if="error" class="bg-red-50 text-red-600 text-sm p-3 rounded-lg mb-4">{{ error }}</div>
@@ -192,7 +230,7 @@ async function submit() {
 
       <div class="bg-white rounded-xl p-6 border border-stone-200">
         <div class="flex justify-between items-center mb-4">
-          <h2 class="font-semibold text-stone-800">食材 *</h2>
+          <h2 class="font-semibold text-stone-800">食材</h2>
           <button type="button" @click="addIngredient" class="text-sm text-orange-600 hover:text-orange-700">+ 添加食材</button>
         </div>
         <div class="space-y-2">
@@ -237,5 +275,11 @@ async function submit() {
         {{ loading ? '保存中...' : '保存菜谱' }}
       </button>
     </form>
+
+    <SmartImportModal
+      v-if="showImportModal"
+      @parsed="onParsed"
+      @close="showImportModal = false"
+    />
   </div>
 </template>
