@@ -1,23 +1,31 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { uploadImage } from '../api/recipe'
 
 defineProps<{
   current?: string
 }>()
 
 const emit = defineEmits<{
-  upload: [file: File]
+  uploaded: [url: string]
 }>()
 
 const uploading = ref(false)
+const error = ref('')
 
 async function handleFile(e: Event) {
   const input = e.target as HTMLInputElement
   if (!input.files?.length) return
 
+  const file = input.files[0]!
   uploading.value = true
+  error.value = ''
+
   try {
-    emit('upload', input.files[0]!)
+    const result = await uploadImage(file)
+    emit('uploaded', result.url)
+  } catch (err: any) {
+    error.value = err.message || '图片上传失败'
   } finally {
     uploading.value = false
     input.value = ''
@@ -34,5 +42,6 @@ async function handleFile(e: Event) {
       {{ uploading ? '上传中...' : (current ? '更换图片' : '选择图片') }}
       <input type="file" accept="image/*" class="hidden" @change="handleFile" :disabled="uploading" />
     </label>
+    <p v-if="error" class="mt-1 text-xs text-red-500">{{ error }}</p>
   </div>
 </template>

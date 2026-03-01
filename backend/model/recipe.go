@@ -13,8 +13,10 @@ type Recipe struct {
 	CoverImage  string       `json:"cover_image"`
 	Calories    int          `json:"calories"`
 	Notes       string       `json:"notes"`
+	Tips        string       `json:"tips"`
 	ShareToken  string       `json:"share_token,omitempty"`
 	Ingredients []Ingredient `json:"ingredients"`
+	Seasonings  []Ingredient `json:"seasonings"`
 	CreatedAt   time.Time    `json:"created_at"`
 	UpdatedAt   time.Time    `json:"updated_at"`
 }

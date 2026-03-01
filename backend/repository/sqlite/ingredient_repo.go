@@ -17,7 +17,7 @@ func NewIngredientRepo(db *sql.DB) *IngredientRepo {
 	return &IngredientRepo{db: db}
 }
 
-func (r *IngredientRepo) BatchCreate(ctx context.Context, recipeID int64, ingredients []model.Ingredient) error {
+func (r *IngredientRepo) BatchCreate(ctx context.Context, recipeID int64, ingredients []model.Ingredient, category string) error {
 	if len(ingredients) == 0 {
 		return nil
 	}
@@ -27,14 +27,14 @@ func (r *IngredientRepo) BatchCreate(ctx context.Context, recipeID int64, ingred
 	}
 	defer tx.Rollback()
 
-	stmt, err := tx.PrepareContext(ctx, "INSERT INTO recipe_ingredients (recipe_id, name, amount, unit) VALUES (?, ?, ?, ?)")
+	stmt, err := tx.PrepareContext(ctx, "INSERT INTO recipe_ingredients (recipe_id, name, amount, unit, category) VALUES (?, ?, ?, ?, ?)")
 	if err != nil {
 		return err
 	}
 	defer stmt.Close()
 
 	for _, ing := range ingredients {
-		result, err := stmt.ExecContext(ctx, recipeID, ing.Name, ing.Amount, ing.Unit)
+		result, err := stmt.ExecContext(ctx, recipeID, ing.Name, ing.Amount, ing.Unit, category)
 		if err != nil {
 			return err
 		}
@@ -47,7 +47,7 @@ func (r *IngredientRepo) BatchCreate(ctx context.Context, recipeID int64, ingred
 
 func (r *IngredientRepo) ListByRecipeID(ctx context.Context, recipeID int64) ([]model.Ingredient, error) {
 	rows, err := r.db.QueryContext(ctx,
-		"SELECT id, recipe_id, name, amount, unit FROM recipe_ingredients WHERE recipe_id = ?", recipeID)
+		"SELECT id, recipe_id, name, amount, unit, COALESCE(category, 'ingredient') FROM recipe_ingredients WHERE recipe_id = ?", recipeID)
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +56,7 @@ func (r *IngredientRepo) ListByRecipeID(ctx context.Context, recipeID int64) ([]
 	var ingredients []model.Ingredient
 	for rows.Next() {
 		var ing model.Ingredient
-		if err := rows.Scan(&ing.ID, &ing.RecipeID, &ing.Name, &ing.Amount, &ing.Unit); err != nil {
+		if err := rows.Scan(&ing.ID, &ing.RecipeID, &ing.Name, &ing.Amount, &ing.Unit, &ing.Category); err != nil {
 			return nil, err
 		}
 		ingredients = append(ingredients, ing)
@@ -81,7 +81,7 @@ func (r *IngredientRepo) ListByRecipeIDs(ctx context.Context, recipeIDs []int64)
 	}
 
 	query := fmt.Sprintf(
-		"SELECT id, recipe_id, name, amount, unit FROM recipe_ingredients WHERE recipe_id IN (%s)",
+		"SELECT id, recipe_id, name, amount, unit, COALESCE(category, 'ingredient') FROM recipe_ingredients WHERE recipe_id IN (%s)",
 		strings.Join(placeholders, ","),
 	)
 	rows, err := r.db.QueryContext(ctx, query, args...)
@@ -92,7 +92,7 @@ func (r *IngredientRepo) ListByRecipeIDs(ctx context.Context, recipeIDs []int64)
 
 	for rows.Next() {
 		var ing model.Ingredient
-		if err := rows.Scan(&ing.ID, &ing.RecipeID, &ing.Name, &ing.Amount, &ing.Unit); err != nil {
+		if err := rows.Scan(&ing.ID, &ing.RecipeID, &ing.Name, &ing.Amount, &ing.Unit, &ing.Category); err != nil {
 			return nil, err
 		}
 		result[ing.RecipeID] = append(result[ing.RecipeID], ing)
