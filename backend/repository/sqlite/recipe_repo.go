@@ -23,11 +23,11 @@ func (r *RecipeRepo) Create(ctx context.Context, recipe *model.Recipe) error {
 	tagsJSON, _ := json.Marshal(recipe.Tags)
 
 	result, err := r.db.ExecContext(ctx,
-		`INSERT INTO recipes (user_id, name, steps, cook_time, difficulty, tags, cover_image, calories, notes, share_token)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		`INSERT INTO recipes (user_id, name, steps, cook_time, difficulty, tags, cover_image, calories, notes, tips, share_token)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		recipe.UserID, recipe.Name, string(stepsJSON), recipe.CookTime,
 		recipe.Difficulty, string(tagsJSON), recipe.CoverImage, recipe.Calories, recipe.Notes,
-		nullString(recipe.ShareToken),
+		recipe.Tips, nullString(recipe.ShareToken),
 	)
 	if err != nil {
 		return err
@@ -52,11 +52,11 @@ func (r *RecipeRepo) GetByID(ctx context.Context, id int64) (*model.Recipe, erro
 	var stepsJSON, tagsJSON string
 	var shareToken sql.NullString
 	err := r.db.QueryRowContext(ctx,
-		`SELECT id, user_id, name, steps, cook_time, difficulty, tags, cover_image, calories, notes, share_token, created_at, updated_at
+		`SELECT id, user_id, name, steps, cook_time, difficulty, tags, cover_image, calories, notes, COALESCE(tips, ''), share_token, created_at, updated_at
 		 FROM recipes WHERE id = ?`, id,
 	).Scan(&recipe.ID, &recipe.UserID, &recipe.Name, &stepsJSON, &recipe.CookTime,
 		&recipe.Difficulty, &tagsJSON, &recipe.CoverImage, &recipe.Calories, &recipe.Notes,
-		&shareToken, &recipe.CreatedAt, &recipe.UpdatedAt)
+		&recipe.Tips, &shareToken, &recipe.CreatedAt, &recipe.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -77,11 +77,11 @@ func (r *RecipeRepo) GetByShareToken(ctx context.Context, token string) (*model.
 	var stepsJSON, tagsJSON string
 	var shareToken sql.NullString
 	err := r.db.QueryRowContext(ctx,
-		`SELECT id, user_id, name, steps, cook_time, difficulty, tags, cover_image, calories, notes, share_token, created_at, updated_at
+		`SELECT id, user_id, name, steps, cook_time, difficulty, tags, cover_image, calories, notes, COALESCE(tips, ''), share_token, created_at, updated_at
 		 FROM recipes WHERE share_token = ?`, token,
 	).Scan(&recipe.ID, &recipe.UserID, &recipe.Name, &stepsJSON, &recipe.CookTime,
 		&recipe.Difficulty, &tagsJSON, &recipe.CoverImage, &recipe.Calories, &recipe.Notes,
-		&shareToken, &recipe.CreatedAt, &recipe.UpdatedAt)
+		&recipe.Tips, &shareToken, &recipe.CreatedAt, &recipe.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +98,7 @@ func (r *RecipeRepo) GetByShareToken(ctx context.Context, token string) (*model.
 }
 
 func (r *RecipeRepo) List(ctx context.Context, filters model.RecipeFilters) ([]model.Recipe, error) {
-	query := "SELECT DISTINCT r.id, r.user_id, r.name, r.steps, r.cook_time, r.difficulty, r.tags, r.cover_image, r.calories, r.notes, r.share_token, r.created_at, r.updated_at FROM recipes r"
+	query := "SELECT DISTINCT r.id, r.user_id, r.name, r.steps, r.cook_time, r.difficulty, r.tags, r.cover_image, r.calories, r.notes, COALESCE(r.tips, ''), r.share_token, r.created_at, r.updated_at FROM recipes r"
 	var conditions []string
 	var args []interface{}
 
@@ -160,7 +160,7 @@ func (r *RecipeRepo) List(ctx context.Context, filters model.RecipeFilters) ([]m
 		var shareToken sql.NullString
 		if err := rows.Scan(&recipe.ID, &recipe.UserID, &recipe.Name, &stepsJSON, &recipe.CookTime,
 			&recipe.Difficulty, &tagsJSON, &recipe.CoverImage, &recipe.Calories, &recipe.Notes,
-			&shareToken, &recipe.CreatedAt, &recipe.UpdatedAt); err != nil {
+			&recipe.Tips, &shareToken, &recipe.CreatedAt, &recipe.UpdatedAt); err != nil {
 			return nil, err
 		}
 		recipe.ShareToken = shareToken.String
@@ -185,11 +185,11 @@ func (r *RecipeRepo) Update(ctx context.Context, recipe *model.Recipe) error {
 	tagsJSON, _ := json.Marshal(recipe.Tags)
 
 	_, err := r.db.ExecContext(ctx,
-		`UPDATE recipes SET name=?, steps=?, cook_time=?, difficulty=?, tags=?, cover_image=?, calories=?, notes=?, share_token=?, updated_at=CURRENT_TIMESTAMP
+		`UPDATE recipes SET name=?, steps=?, cook_time=?, difficulty=?, tags=?, cover_image=?, calories=?, notes=?, tips=?, share_token=?, updated_at=CURRENT_TIMESTAMP
 		 WHERE id=?`,
 		recipe.Name, string(stepsJSON), recipe.CookTime, recipe.Difficulty,
 		string(tagsJSON), recipe.CoverImage, recipe.Calories, recipe.Notes,
-		nullString(recipe.ShareToken), recipe.ID,
+		recipe.Tips, nullString(recipe.ShareToken), recipe.ID,
 	)
 	return err
 }
@@ -210,7 +210,7 @@ func (r *RecipeRepo) ListByIDs(ctx context.Context, ids []int64) ([]model.Recipe
 		args[i] = id
 	}
 	query := fmt.Sprintf(
-		"SELECT id, user_id, name, steps, cook_time, difficulty, tags, cover_image, calories, notes, share_token, created_at, updated_at FROM recipes WHERE id IN (%s)",
+		"SELECT id, user_id, name, steps, cook_time, difficulty, tags, cover_image, calories, notes, COALESCE(tips, ''), share_token, created_at, updated_at FROM recipes WHERE id IN (%s)",
 		strings.Join(placeholders, ","),
 	)
 	rows, err := r.db.QueryContext(ctx, query, args...)
@@ -226,7 +226,7 @@ func (r *RecipeRepo) ListByIDs(ctx context.Context, ids []int64) ([]model.Recipe
 		var shareToken sql.NullString
 		if err := rows.Scan(&recipe.ID, &recipe.UserID, &recipe.Name, &stepsJSON, &recipe.CookTime,
 			&recipe.Difficulty, &tagsJSON, &recipe.CoverImage, &recipe.Calories, &recipe.Notes,
-			&shareToken, &recipe.CreatedAt, &recipe.UpdatedAt); err != nil {
+			&recipe.Tips, &shareToken, &recipe.CreatedAt, &recipe.UpdatedAt); err != nil {
 			return nil, err
 		}
 		recipe.ShareToken = shareToken.String

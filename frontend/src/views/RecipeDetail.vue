@@ -118,6 +118,16 @@ async function copyShareLink() {
             </li>
           </ul>
         </div>
+
+        <div v-if="store.currentRecipe.seasonings?.length" class="bg-white rounded-xl p-4 border border-stone-200 mt-4">
+          <h2 class="font-semibold text-stone-800 mb-3">调料</h2>
+          <ul class="space-y-2">
+            <li v-for="s in store.currentRecipe.seasonings" :key="s.id" class="flex justify-between text-sm">
+              <span class="text-stone-700">{{ s.name }}</span>
+              <span class="text-stone-500">{{ s.amount }}{{ s.unit }}</span>
+            </li>
+          </ul>
+        </div>
       </div>
 
       <div class="md:col-span-2">
@@ -140,6 +150,11 @@ async function copyShareLink() {
         <div v-if="store.currentRecipe.notes" class="bg-white rounded-xl p-4 border border-stone-200 mt-4">
           <h2 class="font-semibold text-stone-800 mb-2">备注</h2>
           <p class="text-sm text-stone-600">{{ store.currentRecipe.notes }}</p>
+        </div>
+
+        <div v-if="store.currentRecipe.tips" class="bg-white rounded-xl p-4 border border-stone-200 mt-4">
+          <h2 class="font-semibold text-stone-800 mb-2">注意事项</h2>
+          <p class="text-sm text-stone-600 whitespace-pre-line">{{ store.currentRecipe.tips }}</p>
         </div>
       </div>
     </div>

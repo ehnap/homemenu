@@ -24,12 +24,36 @@ func (s *RecipeService) Create(ctx context.Context, recipe *model.Recipe) error 
 	}
 
 	if len(recipe.Ingredients) > 0 {
-		if err := s.ingredientRepo.BatchCreate(ctx, recipe.ID, recipe.Ingredients); err != nil {
+		if err := s.ingredientRepo.BatchCreate(ctx, recipe.ID, recipe.Ingredients, "ingredient"); err != nil {
+			return err
+		}
+	}
+
+	if len(recipe.Seasonings) > 0 {
+		if err := s.ingredientRepo.BatchCreate(ctx, recipe.ID, recipe.Seasonings, "seasoning"); err != nil {
 			return err
 		}
 	}
 
 	return nil
+}
+
+// splitIngredients separates a flat ingredient list into ingredients and seasonings by Category.
+func splitIngredients(all []model.Ingredient) (ingredients, seasonings []model.Ingredient) {
+	for _, ing := range all {
+		if ing.Category == "seasoning" {
+			seasonings = append(seasonings, ing)
+		} else {
+			ingredients = append(ingredients, ing)
+		}
+	}
+	if ingredients == nil {
+		ingredients = []model.Ingredient{}
+	}
+	if seasonings == nil {
+		seasonings = []model.Ingredient{}
+	}
+	return
 }
 
 func (s *RecipeService) GetByID(ctx context.Context, id int64) (*model.Recipe, error) {
@@ -38,11 +62,11 @@ func (s *RecipeService) GetByID(ctx context.Context, id int64) (*model.Recipe, e
 		return nil, err
 	}
 
-	ingredients, err := s.ingredientRepo.ListByRecipeID(ctx, id)
+	all, err := s.ingredientRepo.ListByRecipeID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
-	recipe.Ingredients = ingredients
+	recipe.Ingredients, recipe.Seasonings = splitIngredients(all)
 
 	return recipe, nil
 }
@@ -63,10 +87,11 @@ func (s *RecipeService) List(ctx context.Context, filters model.RecipeFilters) (
 			return nil, err
 		}
 		for i := range recipes {
-			recipes[i].Ingredients = ingredientMap[recipes[i].ID]
-			if recipes[i].Ingredients == nil {
-				recipes[i].Ingredients = []model.Ingredient{}
+			all := ingredientMap[recipes[i].ID]
+			if all == nil {
+				all = []model.Ingredient{}
 			}
+			recipes[i].Ingredients, recipes[i].Seasonings = splitIngredients(all)
 		}
 	}
 
@@ -83,7 +108,13 @@ func (s *RecipeService) Update(ctx context.Context, recipe *model.Recipe) error 
 	}
 
 	if len(recipe.Ingredients) > 0 {
-		if err := s.ingredientRepo.BatchCreate(ctx, recipe.ID, recipe.Ingredients); err != nil {
+		if err := s.ingredientRepo.BatchCreate(ctx, recipe.ID, recipe.Ingredients, "ingredient"); err != nil {
+			return err
+		}
+	}
+
+	if len(recipe.Seasonings) > 0 {
+		if err := s.ingredientRepo.BatchCreate(ctx, recipe.ID, recipe.Seasonings, "seasoning"); err != nil {
 			return err
 		}
 	}
@@ -126,11 +157,11 @@ func (s *RecipeService) GetByShareToken(ctx context.Context, token string) (*mod
 		return nil, err
 	}
 
-	ingredients, err := s.ingredientRepo.ListByRecipeID(ctx, recipe.ID)
+	all, err := s.ingredientRepo.ListByRecipeID(ctx, recipe.ID)
 	if err != nil {
 		return nil, err
 	}
-	recipe.Ingredients = ingredients
+	recipe.Ingredients, recipe.Seasonings = splitIngredients(all)
 
 	return recipe, nil
 }

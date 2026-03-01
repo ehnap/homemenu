@@ -23,7 +23,7 @@ type RecipeRepo interface {
 }
 
 type IngredientRepo interface {
-	BatchCreate(ctx context.Context, recipeID int64, ingredients []model.Ingredient) error
+	BatchCreate(ctx context.Context, recipeID int64, ingredients []model.Ingredient, category string) error
 	ListByRecipeID(ctx context.Context, recipeID int64) ([]model.Ingredient, error)
 	ListByRecipeIDs(ctx context.Context, recipeIDs []int64) (map[int64][]model.Ingredient, error)
 	DeleteByRecipeID(ctx context.Context, recipeID int64) error

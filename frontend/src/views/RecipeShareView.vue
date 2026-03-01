@@ -73,6 +73,16 @@ onMounted(async () => {
               </ul>
               <p v-else class="text-stone-500 text-sm">暂无食材信息</p>
             </div>
+
+            <div v-if="recipe.seasonings?.length" class="bg-white rounded-xl p-4 border border-stone-200 mt-4">
+              <h3 class="font-semibold text-stone-800 mb-3">调料</h3>
+              <ul class="space-y-2">
+                <li v-for="s in recipe.seasonings" :key="s.name" class="flex justify-between text-sm">
+                  <span class="text-stone-700">{{ s.name }}</span>
+                  <span class="text-stone-500">{{ s.amount }}{{ s.unit }}</span>
+                </li>
+              </ul>
+            </div>
           </div>
 
           <div class="md:col-span-2">
@@ -95,6 +105,11 @@ onMounted(async () => {
             <div v-if="recipe.notes" class="bg-white rounded-xl p-4 border border-stone-200 mt-4">
               <h3 class="font-semibold text-stone-800 mb-2">备注</h3>
               <p class="text-sm text-stone-600">{{ recipe.notes }}</p>
+            </div>
+
+            <div v-if="recipe.tips" class="bg-white rounded-xl p-4 border border-stone-200 mt-4">
+              <h3 class="font-semibold text-stone-800 mb-2">注意事项</h3>
+              <p class="text-sm text-stone-600 whitespace-pre-line">{{ recipe.tips }}</p>
             </div>
           </div>
         </div>

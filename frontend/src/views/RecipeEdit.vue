@@ -2,7 +2,7 @@
 import { onMounted, ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useRecipeStore } from '../stores/recipe'
-import { uploadImage } from '../api/recipe'
+
 import type { Ingredient, Step, Recipe } from '../types'
 import IngredientInput from '../components/IngredientInput.vue'
 import ImageUpload from '../components/ImageUpload.vue'
@@ -23,7 +23,9 @@ const tagInput = ref('')
 const coverImage = ref('')
 const calories = ref(0)
 const notes = ref('')
+const tips = ref('')
 const ingredients = ref<Ingredient[]>([{ name: '', amount: '', unit: '' }])
+const seasonings = ref<Ingredient[]>([{ name: '', amount: '', unit: '' }])
 const steps = ref<Step[]>([{ order: 1, description: '' }])
 const loading = ref(false)
 const error = ref('')
@@ -42,8 +44,12 @@ onMounted(async () => {
       coverImage.value = store.currentRecipe.cover_image
       calories.value = store.currentRecipe.calories
       notes.value = store.currentRecipe.notes
+      tips.value = store.currentRecipe.tips || ''
       ingredients.value = store.currentRecipe.ingredients.length > 0
         ? store.currentRecipe.ingredients.map(i => ({ ...i }))
+        : [{ name: '', amount: '', unit: '' }]
+      seasonings.value = store.currentRecipe.seasonings?.length > 0
+        ? store.currentRecipe.seasonings.map(i => ({ ...i }))
         : [{ name: '', amount: '', unit: '' }]
       steps.value = store.currentRecipe.steps.length > 0
         ? store.currentRecipe.steps.map(s => ({ ...s }))
@@ -65,6 +71,16 @@ function addIngredient() {
 function removeIngredient(index: number) {
   if (ingredients.value.length > 1) {
     ingredients.value.splice(index, 1)
+  }
+}
+
+function addSeasoning() {
+  seasonings.value.push({ name: '', amount: '', unit: '' })
+}
+
+function removeSeasoning(index: number) {
+  if (seasonings.value.length > 1) {
+    seasonings.value.splice(index, 1)
   }
 }
 
@@ -98,9 +114,8 @@ function togglePresetTag(tag: string) {
   }
 }
 
-async function onCoverUpload(file: File) {
-  const result = await uploadImage(file)
-  coverImage.value = result.url
+function onCoverUploaded(url: string) {
+  coverImage.value = url
 }
 
 function fillFromParsed(parsed: Partial<Recipe>) {
@@ -110,8 +125,16 @@ function fillFromParsed(parsed: Partial<Recipe>) {
   if (parsed.tags?.length) tags.value = [...parsed.tags]
   if (parsed.calories) calories.value = parsed.calories
   if (parsed.notes) notes.value = parsed.notes
+  if (parsed.tips) tips.value = parsed.tips
   if (parsed.ingredients?.length) {
     ingredients.value = parsed.ingredients.map(i => ({
+      name: i.name || '',
+      amount: i.amount || '',
+      unit: i.unit || '',
+    }))
+  }
+  if (parsed.seasonings?.length) {
+    seasonings.value = parsed.seasonings.map(i => ({
       name: i.name || '',
       amount: i.amount || '',
       unit: i.unit || '',
@@ -137,6 +160,7 @@ async function submit() {
   }
 
   const validIngredients = ingredients.value.filter(i => i.name.trim())
+  const validSeasonings = seasonings.value.filter(i => i.name.trim())
 
   error.value = ''
   loading.value = true
@@ -149,7 +173,9 @@ async function submit() {
     cover_image: coverImage.value,
     calories: calories.value,
     notes: notes.value,
+    tips: tips.value,
     ingredients: validIngredients,
+    seasonings: validSeasonings,
     steps: steps.value.filter(s => s.description.trim()),
   }
 
@@ -239,7 +265,7 @@ async function submit() {
 
         <div>
           <label class="block text-sm text-stone-600 mb-1">封面图</label>
-          <ImageUpload :current="coverImage" @upload="onCoverUpload" />
+          <ImageUpload :current="coverImage" @uploaded="onCoverUploaded" />
         </div>
 
         <div>
@@ -266,6 +292,23 @@ async function submit() {
 
       <div class="bg-white rounded-xl p-6 border border-stone-200">
         <div class="flex justify-between items-center mb-4">
+          <h2 class="font-semibold text-stone-800">调料</h2>
+          <button type="button" @click="addSeasoning" class="text-sm text-orange-600 hover:text-orange-700">+ 添加调料</button>
+        </div>
+        <div class="space-y-2">
+          <IngredientInput
+            v-for="(_s, i) in seasonings"
+            :key="i"
+            v-model="seasonings[i]!"
+            :can-remove="seasonings.length > 1"
+            name-placeholder="调料名"
+            @remove="removeSeasoning(i)"
+          />
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl p-6 border border-stone-200">
+        <div class="flex justify-between items-center mb-4">
           <h2 class="font-semibold text-stone-800">做法步骤</h2>
           <button type="button" @click="addStep" class="text-sm text-orange-600 hover:text-orange-700">+ 添加步骤</button>
         </div>
@@ -285,6 +328,11 @@ async function submit() {
             </button>
           </div>
         </div>
+      </div>
+
+      <div class="bg-white rounded-xl p-6 border border-stone-200">
+        <h2 class="font-semibold text-stone-800 mb-4">注意事项</h2>
+        <textarea v-model="tips" rows="3" placeholder="记录烹饪注意事项，如火候控制、食材处理要点等" class="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"></textarea>
       </div>
 
       <button

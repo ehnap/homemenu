@@ -6,4 +6,5 @@ type Ingredient struct {
 	Name     string `json:"name"`
 	Amount   string `json:"amount"`
 	Unit     string `json:"unit"`
+	Category string `json:"-"`
 }

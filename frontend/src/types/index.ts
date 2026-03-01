@@ -30,8 +30,10 @@ export interface Recipe {
   cover_image: string
   calories: number
   notes: string
+  tips: string
   share_token?: string
   ingredients: Ingredient[]
+  seasonings: Ingredient[]
   created_at: string
   updated_at: string
 }

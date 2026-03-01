@@ -7,6 +7,7 @@ const model = defineModel<Ingredient>({ required: true })
 
 defineProps<{
   canRemove: boolean
+  namePlaceholder?: string
 }>()
 
 const emit = defineEmits<{
@@ -62,7 +63,7 @@ function onFocus() {
       <input
         v-model="model.name"
         type="text"
-        placeholder="食材名"
+        :placeholder="namePlaceholder || '食材名'"
         @blur="onBlur"
         @focus="onFocus"
         class="w-full px-3 py-2 border border-stone-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
