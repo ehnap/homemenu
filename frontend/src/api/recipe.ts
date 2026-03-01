@@ -27,6 +27,7 @@ export function uploadImage(file: File): Promise<{ url: string }> {
   formData.append('file', file)
   return client.post<any, { url: string }>('/upload', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
+    timeout: 60000,
   })
 }
 
